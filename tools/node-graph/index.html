@@ -1388,7 +1388,7 @@ document.getElementById('svgBtn').addEventListener('click',()=>{
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 });
 
-// ══ EXPORT VIDEO (MediaRecorder) ══════════════
+// ══ EXPORT VIDEO (captureStream + MediaRecorder) ═══
 document.getElementById('gifBtn').addEventListener('click', () => {
   if (isRecording) return;
 
@@ -1398,108 +1398,79 @@ document.getElementById('gifBtn').addEventListener('click', () => {
   const pP = document.getElementById('progress-pct');
 
   if (!window.MediaRecorder || !canvas.captureStream) {
-    alert('MediaRecorder is not supported in this browser. Try Chrome or Firefox.');
+    alert('Recording not supported. Use Chrome or Edge.');
     return;
   }
 
-  // Pick best supported mime type
-  const mimeType = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4']
+  const mimeType = ['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm']
     .find(m => MediaRecorder.isTypeSupported(m)) || 'video/webm';
-  const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
 
-  const DURATION = 5000; // ms
-  const chunks = [];
+  const DURATION = 5000; // 5 seconds
+  const chunks   = [];
 
-  let stream;
-  try {
-    stream = canvas.captureStream(60);
-  } catch(e) {
-    alert('captureStream failed: ' + e.message); return;
-  }
-
-  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8000000 });
+  const stream   = canvas.captureStream(60);
+  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 12_000_000 });
 
   recorder.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
 
   recorder.onstop = () => {
-    pT.textContent = 'savingVideo…';
-    pF.style.width = '100%';
-    pP.textContent = '100%';
-    setTimeout(() => {
-      const blob = new Blob(chunks, { type: mimeType });
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a');
-      a.download = `node-graph.${ext}`;
-      a.href = url;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 3000);
-      pW.style.display = 'none';
-      isRecording = false;
-    }, 200);
-  };
-
-  recorder.onerror = e => {
-    alert('Recording error: ' + e.error);
+    const blob = new Blob(chunks, { type: mimeType });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.download = 'node-graph.webm';
+    a.href = url;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
     pW.style.display = 'none';
     isRecording = false;
+    lastTs = performance.now();
+    startLoop();
   };
 
-  // Start
+  // Stop the live loop, flag recording
+  if (raf) cancelAnimationFrame(raf);
+  raf = null;
   isRecording = true;
+
   pW.style.display = 'block';
   pT.textContent   = 'recording…';
   pF.style.width   = '0%';
   pP.textContent   = '0%';
 
-  recorder.start(100); // collect a chunk every 100ms
+  recorder.start(100);
 
   const startTs = performance.now();
-
-  // Let the normal animation loop keep running — MediaRecorder reads directly from canvas.
-  // We just need to overlay the REC indicator each frame.
-  const origDrawFrame = drawFrame;
 
   function recordLoop(ts) {
     const dt = Math.min((ts - lastTs) / 1000, 0.05);
     lastTs = ts;
 
-    fpsAccTime += dt; fpsAccFrame++;
-    if (fpsAccTime >= 0.5) {
-      liveFps = Math.round(fpsAccFrame / fpsAccTime);
-      fpsAccTime = fpsAccFrame = 0;
-    }
-
     updateNodes(dt);
-    liveLinks = drawFrame(ctx, wrap.clientWidth, wrap.clientHeight);
+    applyMouseToRenderPositions(); // ← was missing — render positions were frozen
+    drawFrame(ctx, wrap.clientWidth, wrap.clientHeight);
 
-    // REC overlay
     const elapsed = ts - startTs;
-    const pct = Math.min(Math.round((elapsed / DURATION) * 100), 100);
-    const secLeft = Math.max(0, ((DURATION - elapsed) / 1000)).toFixed(1);
-    ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    ctx.fillRect(12, 12, 220, 26);
+    const pct     = Math.min(Math.round((elapsed / DURATION) * 100), 100);
+    const secLeft = Math.max(0, (DURATION - elapsed) / 1000).toFixed(1);
+
+    // REC overlay on canvas (captured in video)
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(12, 12, 240, 26);
     ctx.fillStyle = '#8080ff';
     ctx.font = '12px DepartureMono, Courier New';
-    ctx.fillText(`⏺  REC  ${pct}%  [${secLeft}s REMAINING]`, 18, 28);
+    ctx.fillText(`⏺  REC  ${pct}%  [${secLeft}s LEFT]`, 18, 28);
 
     pF.style.width = pct + '%';
     pP.textContent = pct + '%';
 
-    document.getElementById('s-nodes').textContent = nodes.length;
-    document.getElementById('s-links').textContent = liveLinks;
-    document.getElementById('s-fps').textContent   = liveFps;
-
     if (elapsed < DURATION) {
       raf = requestAnimationFrame(recordLoop);
     } else {
+      raf = null;
       recorder.stop();
-      // Resume normal loop after a tick
-      setTimeout(() => { isRecording = false; lastTs = performance.now(); startLoop(); }, 300);
     }
   }
 
-  // Cancel the current live loop and start record loop
-  if (raf) cancelAnimationFrame(raf);
   lastTs = performance.now();
   raf = requestAnimationFrame(recordLoop);
 });
