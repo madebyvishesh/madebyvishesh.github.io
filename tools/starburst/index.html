@@ -321,7 +321,7 @@ input[type=color]::-webkit-color-swatch { border:none; border-radius:4px; }
       <div class="exp-grid">
         <button class="btn" onclick="exportPNG()"><span class="bi">⬇</span> PNG</button>
         <button class="btn" onclick="exportSVG()"><span class="bi">⬇</span> SVG</button>
-        <button class="btn btn-gif" onclick="exportGIF()"><span class="bi">●</span> GIF · 3s · 20fps</button>
+        <button class="btn btn-gif" onclick="exportGIF()"><span class="bi">●</span> Video · 5s · WebM</button>
       </div>
       <div id="gif-prog">
         <div id="gp-lbl"><span id="gp-txt">Capturing…</span><span id="gp-pct">0%</span></div>
@@ -366,7 +366,6 @@ input[type=color]::-webkit-color-swatch { border:none; border-radius:4px; }
 <!-- Toast -->
 <div id="toast"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
 <script>
 'use strict';
 const canvas = document.getElementById('canvas');
@@ -717,64 +716,70 @@ function exportSVG() {
 }
 
 // ── GIF ──
+let isRecording = false;
+
 function exportGIF() {
-  const prog=G('gif-prog'), fill=G('gp-fill'), pct=G('gp-pct'), txt=G('gp-txt');
-  const TOTAL = 60, FPS = 20, GW=400, GH=400;
-  paused = true;
+  if (isRecording) return;
+
+  const prog = G('gif-prog'), fill = G('gp-fill'), pct = G('gp-pct'), txt = G('gp-txt');
+
+  if (!window.MediaRecorder || !canvas.captureStream) {
+    alert('Recording not supported in this browser. Please use Chrome or Edge.');
+    return;
+  }
+
+  const mimeType = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']
+    .find(m => MediaRecorder.isTypeSupported(m)) || 'video/webm';
+
+  const DURATION = 5000; // 5 seconds
+  const chunks = [];
+
+  const stream   = canvas.captureStream(60);
+  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 12_000_000 });
+
+  recorder.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+
+  recorder.onstop = () => {
+    const blob = new Blob(chunks, { type: mimeType });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'starburst_' + Date.now() + '.webm';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+    prog.classList.remove('on');
+    isRecording = false;
+    paused = false;
+    toast('Video saved');
+  };
+
+  isRecording = true;
+  paused = false; // keep animation running so it gets captured
   prog.classList.add('on');
-  txt.textContent='Initializing…'; pct.textContent='0%'; fill.style.width='0%';
-  const off = document.createElement('canvas'); off.width=GW; off.height=GH;
-  const oc = off.getContext('2d');
-  setTimeout(() => {
-    const gif = new GIF({ workers:2, quality:8, width:GW, height:GH,
-      workerScript:'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js' });
-    const p = getP(), sc=GW/W();
-    function dn(c,x,y,sz,gl,col) {
-      const r=rgb(col); c.save();
-      c.shadowBlur=gl; c.shadowColor=`rgba(${r},1)`;
-      c.fillStyle=`rgba(${r},1)`; c.beginPath(); c.arc(x,y,sz,0,Math.PI*2); c.fill(); c.restore();
+  txt.textContent = 'Recording…';
+  fill.style.width = '0%';
+  pct.textContent = '0%';
+
+  recorder.start(100);
+
+  const startTs = performance.now();
+
+  function recLoop(ts) {
+    const elapsed = ts - startTs;
+    const v = Math.min(Math.round((elapsed / DURATION) * 100), 100);
+    const secLeft = Math.max(0, (DURATION - elapsed) / 1000).toFixed(1);
+
+    fill.style.width = v + '%';
+    pct.textContent = v + '%';
+    txt.textContent = `⏺ REC  ${v}%  [${secLeft}s left]`;
+
+    if (elapsed < DURATION) {
+      requestAnimationFrame(recLoop);
+    } else {
+      recorder.stop();
     }
-    function df(t) {
-      oc.save(); oc.scale(sc,sc);
-      oc.fillStyle=p.bgColor; oc.fillRect(0,0,W(),H());
-      const cx2=W()/2+p.hubX, cy2=H()/2+p.hubY;
-      const hp=Math.sin(t*p.pulseSpeed*.8)*.5+.5;
-      const lr=rgb(p.lineColor);
-      for (const ray of rays) {
-        const sw=(p.swayInt*Math.PI/180)*3;
-        const ang=ray.angle+Math.sin(t*ray.sf+ray.so)*sw;
-        let len=ray.baseLen; if(p.lenBreathe) len*=(1+Math.sin(t*ray.lf+ray.lo)*.1);
-        const tx=cx2+Math.cos(ang)*len, ty=cy2+Math.sin(ang)*len;
-        oc.save(); oc.globalAlpha=p.lineOpacity; oc.strokeStyle=`rgb(${lr})`; oc.lineWidth=p.lineWidth; oc.shadowBlur=0;
-        oc.beginPath(); oc.moveTo(cx2,cy2); oc.lineTo(tx,ty); oc.stroke(); oc.restore();
-        const tp=Math.sin(t*p.pulseSpeed*.9+ray.po)*.5+.5;
-        dn(oc,tx,ty,ray.tipSize*(1+.12*tp),p.nodeGlow*(.6+.4*tp),p.nodeColor);
-        if(p.secNodes) for(const s of ray.secs){
-          const sp=Math.sin(t*p.pulseSpeed+s.po)*.5+.5;
-          dn(oc,cx2+Math.cos(ang)*len*s.t,cy2+Math.sin(ang)*len*s.t,s.size,p.nodeGlow*.5*(.5+.5*sp),p.nodeColor);
-        }
-      }
-      dn(oc,W()/2+p.hubX,H()/2+p.hubY,p.hubSize*(1+.08*hp),p.hubGlow*(.7+.3*hp),p.nodeColor);
-      oc.restore();
-    }
-    let fr=0;
-    function add() {
-      if(fr>=TOTAL){txt.textContent='Encoding…'; gif.render(); return;}
-      df(time+fr/FPS); gif.addFrame(off,{copy:true,delay:1000/FPS});
-      fr++; const v=Math.round(fr/TOTAL*100);
-      fill.style.width=v+'%'; pct.textContent=v+'%';
-      txt.textContent=`Frame ${fr} / ${TOTAL}`;
-      setTimeout(add,0);
-    }
-    gif.on('finished', b => {
-      prog.classList.remove('on'); paused=false;
-      const a=document.createElement('a');
-      a.href=URL.createObjectURL(b); a.download='starburst_'+Date.now()+'.gif'; a.click();
-      toast('GIF saved');
-    });
-    gif.on('progress', v => { fill.style.width=Math.round(v*100)+'%'; pct.textContent=Math.round(v*100)+'%'; });
-    add();
-  }, 80);
+  }
+
+  requestAnimationFrame(recLoop);
 }
 
 // ── RANDOMIZE PRESET ──
