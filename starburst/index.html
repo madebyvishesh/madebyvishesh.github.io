@@ -700,7 +700,8 @@ ws('swayInt','',2); ws('pulseSpeed','',2); ws('animSpeed','',2);
   });
 
 // ── UI ──
-let sbVis = true;
+let sbVis = !isMobileOrTablet();
+if (!sbVis) G('sidebar').classList.add('hide');
 function toggleSidebar() {
   sbVis = !sbVis;
   G('sidebar').classList.toggle('hide', !sbVis);
