@@ -231,12 +231,107 @@ input[type=color]::-webkit-color-swatch { border:none; border-radius:4px; }
   backdrop-filter:blur(8px); z-index:200; opacity:0; pointer-events:none; transition:opacity .25s;
 }
 #toast.on { opacity:1; }
+
+/* ── Mobile popup ── */
+#mobile-popup {
+  display: none;
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,0.88);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  align-items: center; justify-content: center; padding: 24px;
+}
+#mobile-popup.show { display: flex; }
+#mp-box {
+  background: var(--sb-bg); border: 1px solid var(--border);
+  border-radius: 20px; padding: 30px 22px;
+  max-width: 340px; width: 100%; text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,.8);
+}
+#mp-box .mp-icon { font-size: 38px; margin-bottom: 14px; line-height:1; }
+#mp-box .mp-title {
+  font-family: var(--font-d); font-size: 13px; color: var(--text-b);
+  letter-spacing: .12em; text-transform: uppercase; margin-bottom: 12px;
+}
+#mp-box .mp-body {
+  font-size: 11px; color: var(--text); line-height: 1.85;
+  letter-spacing: .03em; margin-bottom: 22px;
+}
+#mp-box .mp-body strong { color: var(--text-b); }
+.mp-btn {
+  width: 100%; padding: 11px; border-radius: 10px;
+  border: 1px solid var(--border); font-family: var(--font);
+  font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
+  cursor: pointer; margin-bottom: 8px; transition: filter .15s;
+  display: block;
+}
+.mp-btn:hover { filter: brightness(1.15); }
+.mp-primary { background: var(--track); color: var(--text-b); }
+.mp-dismiss  { background: transparent; color: var(--text-d); border-color: transparent; font-size:10px; }
+
+/* ── Tablet ── */
+@media (max-width: 900px) {
+  #sidebar {
+    top: 0; left: 0; width: 100%; border-radius: 0 0 18px 18px; border-top: none;
+    max-height: 58vh;
+  }
+  #sidebar.hide { transform: translateY(-102%); opacity: 1; }
+  #show-btn {
+    top: 12px; left: 50%; right: auto;
+    transform: translateX(-50%);
+    border-radius: 20px;
+  }
+  #hud {
+    top: auto; bottom: 16px;
+    right: 50%; transform: translateX(50%);
+    flex-wrap: wrap; justify-content: center;
+  }
+}
+
+/* ── Phone ── */
+@media (max-width: 540px) {
+  #sidebar { max-height: 62vh; }
+  #sb-header { padding: 10px 13px 10px; }
+  .app-title { font-size: 12px; letter-spacing: .1em; }
+  .badges { gap: 4px; flex-wrap: wrap; }
+  .badge { padding: 2px 6px 2px 4px; }
+  .bl { font-size: 8px; }
+  #scroll { padding: 0 12px 16px; }
+  .sec { margin-top: 14px; }
+  .ctrl { margin-bottom: 9px; }
+  .ctrl-n { font-size: 9px; }
+  .cv { font-size: 10px; min-width: 36px; }
+  .sec-lbl { font-size: 9px; }
+  input[type=range] { height: 26px; }
+  input[type=range]::-webkit-slider-runnable-track { height: 26px; border-radius: 7px; }
+  input[type=range]::-webkit-slider-thumb { height: 18px; width: 10px; margin-top: 4px; }
+  .btn { padding: 8px 10px; font-size: 9px; }
+  #hud { bottom: 10px; flex-direction: column; align-items: center; gap: 4px; }
+  #stats { font-size: 9px; }
+  .stat { padding: 4px 7px; }
+  #theme-btn { font-size: 9px; padding: 4px 9px; pointer-events: all; }
+  #show-btn { top: auto; bottom: 68px; left: 50%; right: auto; transform: translateX(-50%); }
+  #toast { bottom: 12px; font-size: 9px; padding: 5px 14px; }
+}
 </style>
 </head>
 <body>
 
 <!-- Canvas -->
 <div id="cv-wrap"><canvas id="canvas"></canvas></div>
+
+<!-- Mobile / Tablet Popup -->
+<div id="mobile-popup">
+  <div id="mp-box">
+    <div class="mp-icon">🖥️</div>
+    <div class="mp-title">Better on Desktop</div>
+    <div class="mp-body">
+      <strong>STARBURST</strong> is designed for desktop browsers.<br><br>
+      On mobile you can still explore and randomize, but <strong>export features</strong> (PNG, SVG, Video) and the best experience require a desktop or laptop.
+    </div>
+    <button class="mp-btn mp-primary" onclick="closeMobilePopup()">Continue Anyway</button>
+    <button class="mp-btn mp-dismiss" onclick="closeMobilePopup()">Dismiss</button>
+  </div>
+</div>
 
 <!-- Sidebar -->
 <div id="sidebar">
@@ -368,6 +463,19 @@ input[type=color]::-webkit-color-swatch { border:none; border-radius:4px; }
 
 <script>
 'use strict';
+
+// ── Mobile / tablet detection ──
+function isMobileOrTablet() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    || (navigator.maxTouchPoints > 1 && window.innerWidth < 1024);
+}
+function closeMobilePopup() {
+  document.getElementById('mobile-popup').classList.remove('show');
+  sessionStorage.setItem('sb-mobile-dismissed', '1');
+}
+if (isMobileOrTablet() && !sessionStorage.getItem('sb-mobile-dismissed')) {
+  document.getElementById('mobile-popup').classList.add('show');
+}
 const canvas = document.getElementById('canvas');
 const ctx    = canvas.getContext('2d');
 
