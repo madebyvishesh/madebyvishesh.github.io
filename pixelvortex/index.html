@@ -680,6 +680,12 @@ function resizeCanvas() {
 new ResizeObserver(resizeCanvas).observe(wrap);
 
 let grid=[], time=0, playing=true, direction=1, isRecording=false;
+
+// Mouse / touch interaction
+let mouseX = -9999, mouseY = -9999, mouseActive = false;
+let smoothX = -9999, smoothY = -9999; // smoothed cursor that springs back off-screen when away
+const MOUSE_RADIUS   = 160;
+const MOUSE_STRENGTH = 120;
 let lastTs=0, fpsCount=0, fpsTimer=0;
 let blockShape='square', dotShape='square';
 let P={};
@@ -714,8 +720,10 @@ function readParams(){
 function regenerateGrid(){
   readParams(); grid=[];
   const cols=Math.ceil(CW()/P.cellSize), rows=Math.ceil(CH()/P.cellSize);
-  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++)
-    grid.push({cx:c*P.cellSize+P.cellSize*.5, cy:r*P.cellSize+P.cellSize*.5, isBlock:Math.random()<P.blockDensity});
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+    const _ox=c*P.cellSize+P.cellSize*.5, _oy=r*P.cellSize+P.cellSize*.5;
+    grid.push({cx:_ox,cy:_oy,ox:_ox,oy:_oy,rx:_ox,ry:_oy,vx:0,vy:0,isBlock:Math.random()<P.blockDensity});
+  }
   const bl=grid.filter(c=>c.isBlock).length;
   document.getElementById('st-cells').textContent=grid.length;
   document.getElementById('st-blocks').textContent=bl;
@@ -745,7 +753,7 @@ function draw(){
     const c=grid[i], col=getColor(c.cx,c.cy,time);
     if(col===P.bgColor)continue;
     ctx.fillStyle=col;
-    c.isBlock?drawBlock(c.cx,c.cy,br):drawDot(c.cx,c.cy,dr);
+    c.isBlock?drawBlock(c.rx,c.ry,br):drawDot(c.rx,c.ry,dr);
   }
 }
 
@@ -753,6 +761,26 @@ function loop(ts){
   if(!lastTs)lastTs=ts;
   const dt=Math.min((ts-lastTs)/1000,.05); lastTs=ts;
   if(playing)time+=dt*P.animSpeed;
+
+  // Exact reference applyMouseToRenderPositions logic
+  for (let i = 0; i < grid.length; i++) {
+    const cell = grid[i];
+    // Target render pos starts at home
+    let tx = cell.ox, ty = cell.oy;
+    if (mouseActive) {
+      const dx = cell.ox - mouseX, dy = cell.oy - mouseY;
+      const d  = Math.hypot(dx, dy);
+      if (d < MOUSE_RADIUS && d > 0.5) {
+        const force = Math.pow(1 - d / MOUSE_RADIUS, 1.6) * MOUSE_STRENGTH;
+        tx += (dx / d) * force;
+        ty += (dy / d) * force;
+      }
+    }
+    // Lerp render pos toward target — auto spring-back when mouse away
+    cell.rx += (tx - cell.rx) * 0.18;
+    cell.ry += (ty - cell.ry) * 0.18;
+  }
+
   readParams(); draw();
   fpsCount++; fpsTimer+=dt;
   if(fpsTimer>=.5){ document.getElementById('st-fps').textContent=Math.round(fpsCount/fpsTimer); fpsCount=0;fpsTimer=0; }
@@ -1038,6 +1066,38 @@ function dismissDevicePopup() {
   if (isMobileOrTablet && !dismissed) {
     document.getElementById('device-popup').style.display = 'flex';
   }
+})();
+
+/* ── MOUSE / TOUCH CANVAS INTERACTION ── */
+(function() {
+  const c = canvas;
+
+  function onMove(x, y) {
+    const rect = c.getBoundingClientRect();
+    const px = (x - rect.left) * (c.width  / rect.width  / (window.devicePixelRatio || 1));
+    const py = (y - rect.top)  * (c.height / rect.height / (window.devicePixelRatio || 1));
+    mouseX = x - rect.left;
+    mouseY = y - rect.top;
+    mouseActive = true;
+  }
+
+  c.addEventListener('mousemove', e => onMove(e.clientX, e.clientY));
+  c.addEventListener('mouseenter', e => { mouseActive = true; onMove(e.clientX, e.clientY); });
+  c.addEventListener('mouseleave', () => { mouseActive = false; });
+
+  // Touch support
+  c.addEventListener('touchmove', e => {
+    e.preventDefault();
+    const t = e.touches[0];
+    onMove(t.clientX, t.clientY);
+  }, { passive: false });
+  c.addEventListener('touchstart', e => {
+    const t = e.touches[0];
+    onMove(t.clientX, t.clientY);
+  }, { passive: true });
+  c.addEventListener('touchend', () => { mouseActive = false; });
+
+  c.style.cursor = 'crosshair';
 })();
 
 /* Boot */
