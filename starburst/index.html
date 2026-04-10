@@ -268,49 +268,86 @@ input[type=color]::-webkit-color-swatch { border:none; border-radius:4px; }
 .mp-primary { background: var(--track); color: var(--text-b); }
 .mp-dismiss  { background: transparent; color: var(--text-d); border-color: transparent; font-size:10px; }
 
-/* ── Tablet ── */
+/* ── Tablet + Mobile shared ── */
 @media (max-width: 900px) {
-  #sidebar {
-    top: 0; left: 0; width: 100%; border-radius: 0 0 18px 18px; border-top: none;
-    max-height: 58vh;
-  }
-  #sidebar.hide { transform: translateY(-102%); opacity: 1; }
-  #show-btn {
-    top: 12px; left: 50%; right: auto;
-    transform: translateX(-50%);
-    border-radius: 20px;
-  }
+
+  /* Canvas: full screen, no offset */
+  #cv-wrap { top: 0; }
+
+  /* HUD: pinned to bottom, full width, stats + theme side by side */
   #hud {
-    top: auto; bottom: 16px;
-    right: 50%; transform: translateX(50%);
-    flex-wrap: wrap; justify-content: center;
+    top: auto; bottom: 0; left: 0; right: 0;
+    transform: none;
+    flex-direction: row; align-items: center;
+    justify-content: space-between;
+    gap: 0; padding: 8px 10px;
+    background: var(--hud-bg);
+    border-top: 1px solid var(--hud-border);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    pointer-events: all;
+    flex-wrap: nowrap;
+    border-radius: 0;
   }
+  #stats {
+    flex: 1; border-radius: 8px;
+    overflow: hidden; flex-wrap: nowrap;
+  }
+  .stat { padding: 5px 8px; white-space: nowrap; }
+  #theme-btn {
+    flex-shrink: 0; margin-left: 8px;
+    border-radius: 8px; pointer-events: all;
+  }
+
+  /* Sidebar: slides up from bottom */
+  #sidebar {
+    top: auto; bottom: 0; left: 0; right: 0;
+    width: 100%; max-height: 65vh;
+    border-radius: 20px 20px 0 0;
+    border-bottom: none;
+    transform-origin: bottom center;
+  }
+  #sidebar.hide { transform: translateY(102%); opacity: 1; }
+
+  /* Show button: floating top-left like the reference */
+  #show-btn {
+    top: 16px; left: 16px;
+    right: auto; bottom: auto;
+    transform: none;
+    border-radius: 12px;
+    padding: 8px 14px;
+    font-size: 11px;
+  }
+  #sidebar:not(.hide) ~ #show-btn { opacity: 0; pointer-events: none; }
+
+  #toast { bottom: 70px; }
 }
 
-/* ── Phone ── */
+/* ── Phone only extras ── */
 @media (max-width: 540px) {
-  #sidebar { max-height: 62vh; }
+  .stat { padding: 5px 6px; font-size: 9px; }
+  .sv { font-size: 9px; }
+  #theme-btn { font-size: 9px; padding: 4px 9px; }
+
   #sb-header { padding: 10px 13px 10px; }
   .app-title { font-size: 12px; letter-spacing: .1em; }
-  .badges { gap: 4px; flex-wrap: wrap; }
+  .badges { gap: 4px; }
   .badge { padding: 2px 6px 2px 4px; }
   .bl { font-size: 8px; }
+
   #scroll { padding: 0 12px 16px; }
   .sec { margin-top: 14px; }
   .ctrl { margin-bottom: 9px; }
   .ctrl-n { font-size: 9px; }
   .cv { font-size: 10px; min-width: 36px; }
   .sec-lbl { font-size: 9px; }
+
   input[type=range] { height: 26px; }
   input[type=range]::-webkit-slider-runnable-track { height: 26px; border-radius: 7px; }
   input[type=range]::-webkit-slider-thumb { height: 18px; width: 10px; margin-top: 4px; }
+
   .btn { padding: 8px 10px; font-size: 9px; }
-  #hud { bottom: 10px; flex-direction: column; align-items: center; gap: 4px; }
-  #stats { font-size: 9px; }
-  .stat { padding: 4px 7px; }
-  #theme-btn { font-size: 9px; padding: 4px 9px; pointer-events: all; }
-  #show-btn { top: auto; bottom: 68px; left: 50%; right: auto; transform: translateX(-50%); }
-  #toast { bottom: 12px; font-size: 9px; padding: 5px 14px; }
+  #sidebar { max-height: 68vh; }
+  #toast { bottom: 65px; font-size: 9px; padding: 5px 14px; }
 }
 </style>
 </head>
@@ -442,7 +479,7 @@ input[type=color]::-webkit-color-swatch { border:none; border-radius:4px; }
 
 <!-- Show button -->
 <div id="show-btn" onclick="toggleSidebar()" title="Show settings (S)">
-  <span class="kp">S</span> settings
+  <span class="kp">S</span> Settings
 </div>
 
 <!-- HUD -->
