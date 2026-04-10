@@ -378,86 +378,96 @@ body.light #pw { background:#ebebff; border-color:var(--accent-dim); }
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: rgba(0,0,0,0.75);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(0,0,0,0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
-  animation: popupFadeIn 0.3s ease;
+  padding: 28px 20px;
+  animation: popupFadeIn 0.35s ease;
 }
 @keyframes popupFadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 #device-popup-inner {
-  background: #141414;
-  border: 1px solid #2a2a2a;
-  border-radius: 16px;
-  padding: 28px 24px 22px;
-  max-width: 340px;
+  background: #0e0e0e;
+  border: 1px solid #222;
+  border-radius: 20px;
+  padding: 36px 28px 28px;
+  max-width: 380px;
   width: 100%;
   text-align: center;
   font-family: var(--font);
-  box-shadow: 0 24px 60px rgba(0,0,0,0.8);
+  box-shadow: 0 32px 80px rgba(0,0,0,0.9);
 }
 #device-popup-icon {
-  font-size: 32px;
-  margin-bottom: 14px;
-  line-height: 1;
-  opacity: 0.85;
+  margin-bottom: 22px;
+  display: flex;
+  justify-content: center;
 }
 #device-popup-title {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   color: #ffffff;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: 12px;
+  letter-spacing: 0.14em;
+  margin-bottom: 18px;
+  line-height: 1.3;
 }
 #device-popup-body {
-  font-size: 11px;
-  color: #999;
-  line-height: 1.7;
-  letter-spacing: 0.03em;
-  margin-bottom: 22px;
+  font-size: 12px;
+  color: #888;
+  line-height: 1.85;
+  letter-spacing: 0.02em;
+  margin-bottom: 26px;
+}
+#device-popup-body .dp-app {
+  color: #ffffff;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+#device-popup-body strong {
+  color: #d8d8d8;
+  font-weight: 700;
 }
 #device-popup-ok {
   width: 100%;
-  padding: 10px 16px;
-  background: #1e1e1e;
-  color: #d8d8d8;
-  border: 1px solid #383838;
-  border-radius: 10px;
+  padding: 14px 16px;
+  background: #222;
+  color: #e8e8e8;
+  border: 1px solid #333;
+  border-radius: 12px;
   font-family: var(--font);
-  font-size: 11px;
+  font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   cursor: pointer;
+  margin-bottom: 10px;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
+  display: block;
 }
 #device-popup-ok:hover {
-  background: #2a2a2a;
+  background: #2e2e2e;
   border-color: #555;
   color: #fff;
 }
-body.light #device-popup-inner {
-  background: #f5f5f5;
-  border-color: #ddd;
+#device-popup-dismiss {
+  width: 100%;
+  padding: 10px 16px;
+  background: transparent;
+  color: #444;
+  border: none;
+  font-family: var(--font);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  transition: color 0.15s;
+  display: block;
 }
-body.light #device-popup-title { color: #111; }
-body.light #device-popup-body  { color: #666; }
-body.light #device-popup-ok {
-  background: #e8e8e8;
-  color: #333;
-  border-color: #ccc;
-}
-body.light #device-popup-ok:hover {
-  background: #ddd;
-  border-color: #aaa;
-  color: #111;
-}
+#device-popup-dismiss:hover { color: #888; }
 </style>
 </head>
 <body>
@@ -633,12 +643,19 @@ body.light #device-popup-ok:hover {
 <!-- Mobile/Tablet caution popup -->
 <div id="device-popup" style="display:none">
   <div id="device-popup-inner">
-    <div id="device-popup-icon">⚠</div>
+    <div id="device-popup-icon">
+      <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M28 4L52 48H4L28 4Z" fill="#F5C518" stroke="#F5C518" stroke-width="2" stroke-linejoin="round"/>
+        <text x="28" y="40" text-anchor="middle" font-size="22" font-weight="900" fill="#111" font-family="sans-serif">!</text>
+      </svg>
+    </div>
     <div id="device-popup-title">Better on Desktop</div>
     <div id="device-popup-body">
-      You're on a mobile or tablet device. For the full experience — exports, full controls, and best performance — we recommend visiting on a desktop browser.
+      <span class="dp-app">PIXEL VORTEX</span> is designed for desktop browsers.<br><br>
+      On mobile you can still explore and randomize, but <strong>export features</strong> (PNG, SVG, Video) and the best experience require a desktop or laptop.
     </div>
-    <button id="device-popup-ok" onclick="dismissDevicePopup()">Got it, continue anyway</button>
+    <button id="device-popup-ok" onclick="dismissDevicePopup()">Continue Anyway</button>
+    <button id="device-popup-dismiss" onclick="dismissDevicePopup()">Dismiss</button>
   </div>
 </div>
 </div>
