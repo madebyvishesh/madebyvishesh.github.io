@@ -776,7 +776,8 @@ function loop(ts){
 ['c1','c2','c3','c4','c5'].forEach(id=>document.getElementById(id).addEventListener('input',()=>setPaletteCustom()));
 
 /* Sidebar */
-let sbVis=true;
+let sbVis = window.innerWidth > 680;
+if (!sbVis) document.getElementById('sidebar').classList.add('hidden');
 function toggleSidebar(){ sbVis=!sbVis; document.getElementById('sidebar').classList.toggle('hidden',!sbVis); }
 
 /* Keyboard shortcuts */
