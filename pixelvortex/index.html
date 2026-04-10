@@ -372,6 +372,92 @@ body.light #pw { background:#ebebff; border-color:var(--accent-dim); }
   input[type="range"]::-webkit-slider-runnable-track { height: 32px; }
   input[type="range"]::-webkit-slider-thumb { height: 24px; margin-top: 4px; }
 }
+
+/* ── DEVICE CAUTION POPUP ── */
+#device-popup {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: popupFadeIn 0.3s ease;
+}
+@keyframes popupFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+#device-popup-inner {
+  background: #141414;
+  border: 1px solid #2a2a2a;
+  border-radius: 16px;
+  padding: 28px 24px 22px;
+  max-width: 340px;
+  width: 100%;
+  text-align: center;
+  font-family: var(--font);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.8);
+}
+#device-popup-icon {
+  font-size: 32px;
+  margin-bottom: 14px;
+  line-height: 1;
+  opacity: 0.85;
+}
+#device-popup-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 12px;
+}
+#device-popup-body {
+  font-size: 11px;
+  color: #999;
+  line-height: 1.7;
+  letter-spacing: 0.03em;
+  margin-bottom: 22px;
+}
+#device-popup-ok {
+  width: 100%;
+  padding: 10px 16px;
+  background: #1e1e1e;
+  color: #d8d8d8;
+  border: 1px solid #383838;
+  border-radius: 10px;
+  font-family: var(--font);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+#device-popup-ok:hover {
+  background: #2a2a2a;
+  border-color: #555;
+  color: #fff;
+}
+body.light #device-popup-inner {
+  background: #f5f5f5;
+  border-color: #ddd;
+}
+body.light #device-popup-title { color: #111; }
+body.light #device-popup-body  { color: #666; }
+body.light #device-popup-ok {
+  background: #e8e8e8;
+  color: #333;
+  border-color: #ccc;
+}
+body.light #device-popup-ok:hover {
+  background: #ddd;
+  border-color: #aaa;
+  color: #111;
+}
 </style>
 </head>
 <body>
@@ -542,6 +628,18 @@ body.light #pw { background:#ebebff; border-color:var(--accent-dim); }
   <button id="theme-btn" onclick="toggleTheme()" title="Toggle light / dark mode">
     <span id="theme-icon">☀</span><span id="theme-lbl">light</span>
   </button>
+</div>
+
+<!-- Mobile/Tablet caution popup -->
+<div id="device-popup" style="display:none">
+  <div id="device-popup-inner">
+    <div id="device-popup-icon">⚠</div>
+    <div id="device-popup-title">Better on Desktop</div>
+    <div id="device-popup-body">
+      You're on a mobile or tablet device. For the full experience — exports, full controls, and best performance — we recommend visiting on a desktop browser.
+    </div>
+    <button id="device-popup-ok" onclick="dismissDevicePopup()">Got it, continue anyway</button>
+  </div>
 </div>
 </div>
 
@@ -903,6 +1001,25 @@ function toggleTheme() {
     sb.style.transform = '';
     if (dy > 80) toggleSidebar();
   });
+})();
+
+
+/* ── DEVICE POPUP ── */
+function dismissDevicePopup() {
+  const el = document.getElementById('device-popup');
+  el.style.opacity = '0';
+  el.style.transition = 'opacity 0.25s ease';
+  setTimeout(() => el.style.display = 'none', 260);
+  try { sessionStorage.setItem('pvx-device-ok', '1'); } catch(e) {}
+}
+
+(function() {
+  const isMobileOrTablet = /Mobi|Android|iPhone|iPad|iPod|Tablet|Touch/i.test(navigator.userAgent)
+    || (navigator.maxTouchPoints > 1 && window.innerWidth < 1200);
+  const dismissed = (() => { try { return sessionStorage.getItem('pvx-device-ok'); } catch(e){ return null; } })();
+  if (isMobileOrTablet && !dismissed) {
+    document.getElementById('device-popup').style.display = 'flex';
+  }
 })();
 
 /* Boot */
