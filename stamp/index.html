@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -653,6 +654,16 @@ input[type="color"] { position: absolute; opacity: 0; width: 0; height: 0; point
   }
   .preset-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px), (hover: none) and (pointer: coarse) {
+  .drag-handle {
+    display: none;
+  }
+  .section-head,
+  .section-head:active {
+    cursor: default;
   }
 }
 </style>
@@ -1352,10 +1363,15 @@ function initResize(){
 }
 
 // ─── Drag-to-reorder ─────────────────────────────────────────────────────────
+function isPanelDragDisabled(){
+  return window.matchMedia('(max-width: 760px), (hover: none) and (pointer: coarse)').matches;
+}
+
 function initDrag(){
   const scroll=document.getElementById('sidebarScroll');
 
   scroll.addEventListener('pointerdown', e=>{
+    if(isPanelDragDisabled())return;
     if(e.button!==0 && e.pointerType!=='touch')return;
     const interactive=e.target.closest('button, input, select, textarea, label, .toggle, .bg-opt');
     const trigger=e.target.closest('.drag-handle, .section-head') || (!interactive && e.target.closest('.section-card'));
