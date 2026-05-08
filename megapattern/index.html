@@ -3,11 +3,28 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Procedural Pattern Generator</title>
-    <script type="module" crossorigin src="./assets/index-CXY87na5.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-Cwv4F-qU.css">
+    <title>Redirecting to Meshic</title>
+    <meta name="robots" content="noindex" />
+    <meta http-equiv="refresh" content="0; url=https://meshic.app/" />
+    <link rel="canonical" href="https://meshic.app/" />
+    <script>
+      const target = new URL("https://meshic.app/")
+      const oldPrefix = "/megapattern"
+      const currentPath = window.location.pathname
+      const extraPath = currentPath.startsWith(oldPrefix)
+        ? currentPath.slice(oldPrefix.length).replace(/^\/+/, "")
+        : ""
+
+      if (extraPath) {
+        target.pathname = `/${extraPath}`
+      }
+
+      target.search = window.location.search
+      target.hash = window.location.hash
+      window.location.replace(target.toString())
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <p>Redirecting to <a href="https://meshic.app/">Meshic</a>.</p>
   </body>
 </html>
